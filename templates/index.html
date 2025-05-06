@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsolescence Score Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+        }
+        .prediction-card {
+            display: none;
+            margin-top: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-importance {
+            height: 200px;
+            margin-top: 1rem;
+        }
+        .form-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .prediction-badge {
+            font-size: 1.5rem;
+            padding: 0.5rem 1rem;
+        }
+        .confidence-bar {
+            height: 20px;
+            border-radius: 10px;
+            background-color: #e9ecef;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background-color: #0d6efd;
+            transition: width 0.3s ease;
+        }
+        .form-section {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-section h5 {
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Obsolescence Score Predictor</h2>
+        <form id="predictForm" method="post" action="/predict">
+            <div class="mb-3">
+                <label for="city" class="form-label">City</label>
+                <select class="form-select" id="city" name="city" required>
+                    <option value="boston">Boston</option>
+                    <option value="new_york">New York</option>
+                </select>
+                <div class="form-text">Select the city for which you want to predict the score.</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="Building_Size" class="form-label">Building Size (sqft)</label>
+                    <input type="number" class="form-control" id="Building_Size" name="Building_Size" required>
+                    <div class="form-text">Total building size in square feet (e.g., 50000).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Floorplate" class="form-label">Floorplate (sqft)</label>
+                    <input type="number" class="form-control" id="Floorplate" name="Floorplate" required>
+                    <div class="form-text">Typical floorplate size in square feet (e.g., 10000).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Building Age" class="form-label">Building Age (years)</label>
+                    <input type="number" class="form-control" id="Building Age" name="Building Age" required>
+                    <div class="form-text">Age of the building in years (e.g., 30).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Renovated" class="form-label">Renovated (0 = No, 1 = Yes)</label>
+                    <input type="number" min="0" max="1" class="form-control" id="Renovated" name="Renovated" required>
+                    <div class="form-text">Has the building been renovated? Enter 1 for Yes, 0 for No.</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Building Class Score" class="form-label">Building Class Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Building Class Score" name="Building Class Score" required>
+                    <div class="form-text">Score for building class (1 = lowest, 5 = highest).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Commuter Rail Score" class="form-label">Commuter Rail Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Commuter Rail Score" name="Commuter Rail Score" required>
+                    <div class="form-text">Proximity/quality of commuter rail access (1 = poor, 5 = excellent).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Subway Service Score" class="form-label">Subway Service Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Subway Service Score" name="Subway Service Score" required>
+                    <div class="form-text">Proximity/quality of subway service (1 = poor, 5 = excellent).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Highway Proximity Score" class="form-label">Highway Proximity Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Highway Proximity Score" name="Highway Proximity Score" required>
+                    <div class="form-text">Proximity to highways (1 = far, 5 = very close).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Parking Type Score" class="form-label">Parking Type Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Parking Type Score" name="Parking Type Score" required>
+                    <div class="form-text">Quality/availability of parking (1 = poor, 5 = excellent).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Energy_Efficiency Score" class="form-label">Energy Efficiency Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Energy_Efficiency Score" name="Energy_Efficiency Score" required>
+                    <div class="form-text">Energy efficiency of the building (1 = poor, 5 = excellent).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Energy-Star" class="form-label">Energy-Star (0 = No, 1 = Yes)</label>
+                    <input type="number" min="0" max="1" class="form-control" id="Energy-Star" name="Energy-Star" required>
+                    <div class="form-text">Is the building Energy-Star certified? 1 = Yes, 0 = No.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="occupancy rate" class="form-label">Occupancy Rate (%)</label>
+                    <input type="number" min="0" max="100" class="form-control" id="occupancy rate" name="occupancy rate" required>
+                    <div class="form-text">Current occupancy rate as a percentage (e.g., 85).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="assessed_value" class="form-label">Assessed Value ($)</label>
+                    <input type="number" class="form-control" id="assessed_value" name="assessed_value" required>
+                    <div class="form-text">Assessed value of the property in dollars (e.g., 10000000).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="OpEx" class="form-label">OpEx ($/sqft)</label>
+                    <input type="number" step="0.01" class="form-control" id="OpEx" name="OpEx" required>
+                    <div class="form-text">Operating expenses per square foot (e.g., 12.50).</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label for="Owner Occu Score" class="form-label">Owner Occu Score (1-5)</label>
+                    <input type="number" min="1" max="5" class="form-control" id="Owner Occu Score" name="Owner Occu Score" required>
+                    <div class="form-text">Owner occupancy score (1 = low, 5 = high).</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="Submarket" class="form-label">Submarket</label>
+                    <input type="text" class="form-control" id="Submarket" name="Submarket" required>
+                    <div class="form-text">Name of the submarket (e.g., Downtown, Midtown, etc.).</div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-4">Predict Obsolescence Score</button>
+        </form>
+        <div id="result" class="mt-4"></div>
+    </div>
+    <script>
+    // Optional: AJAX form submission to display result without page reload
+    const form = document.getElementById('predictForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => { data[key] = value; });
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const resultDiv = document.getElementById('result');
+        if (response.ok) {
+            const res = await response.json();
+            resultDiv.innerHTML = `<div class='alert alert-success'>Predicted Obsolescence Score: <b>${res.prediction}</b><br>Probabilities: <pre>${JSON.stringify(res.probabilities, null, 2)}</pre></div>`;
+        } else {
+            const err = await response.json();
+            resultDiv.innerHTML = `<div class='alert alert-danger'>Error: ${err.error || 'Unknown error'}<br>${err.fields ? 'Missing fields: ' + err.fields.join(', ') : ''}</div>`;
+        }
+    });
+    </script>
+</body>
+</html> 
